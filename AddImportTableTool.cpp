@@ -8,7 +8,8 @@
 
 using namespace std;
 
-#define ERROR_MESSAGE(Msg) std::cout<<Msg<<std::endl;
+
+
 BOOL    AddImportTable(const string& strTargetFile, const string& strInjectDllName, const string& strFunctionName, const string& strSectionName);
 BOOL    AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const string& strSectionName);
 BOOL    AddNewImportDescriptor(const string& strTargetFile, const string& strInjectDllName, const string& strFunctionName, const string& strSectionName);
@@ -19,7 +20,7 @@ int main(int argc, char *argv[])
 {
 	if (argc < 5)
 	{
-		ERROR_MESSAGE("本程序需要4个参数，第一个参数为exe文件名称，第二个参数为DLL文件名称（不包含路径），第三个参数为从DLL导出的函数名称 ，第四个参数为节名称");
+		std::cout<<("本程序需要4个参数，第一个参数为exe文件名称，第二个参数为DLL文件名称（不包含路径），第三个参数为从DLL导出的函数名称 ，第四个参数为节名称");
 		return 0;
 	}
 
@@ -33,23 +34,23 @@ BOOL AddImportTable(const string& strTargetFile, const string& strInjectDllName,
 	BOOL bOk = false;
 	try
 	{
-		bOk = AddNewSection(strTargetFile, 256, strSectionName);
+		bOk = AddNewSection(strTargetFile, 1024, strSectionName);
 		if (!bOk)
 		{
-			ERROR_MESSAGE("AddImportTable:AddNewSection failed.");
+			std::cout<<("AddImportTable:AddNewSection failed.");
 			return false;
 		}
 
 		bOk = AddNewImportDescriptor(strTargetFile, strInjectDllName, strFunctionName, strSectionName);
 		if (!bOk)
 		{
-			ERROR_MESSAGE("AddImportTable:AddNewImportDescriptor failed.");
+			std::cout<<("AddImportTable:AddNewImportDescriptor failed.");
 			return false;
 		}
 	}
 	catch (exception* e)
 	{
-		ERROR_MESSAGE((string("AddImportTable:") + e->what()).c_str());
+		std::cout<<((string("AddImportTable:") + e->what()).c_str());
 		return false;
 	}
 
@@ -69,7 +70,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		TargetFileHandle = CreateFileA(strTargetFile.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (TargetFileHandle == INVALID_HANDLE_VALUE)
 		{
-			ERROR_MESSAGE(string("AddNewSection:CreateFileA error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewSection:CreateFileA error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
@@ -80,7 +81,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		MappingHandle = CreateFileMappingA(TargetFileHandle, NULL, PAGE_READWRITE, 0, ulFileSize, NULL);
 		if (MappingHandle == NULL)
 		{
-			ERROR_MESSAGE(string("AddNewSection:CreateFileMapping error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewSection:CreateFileMapping error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
@@ -89,7 +90,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		FileData = MapViewOfFile(MappingHandle, FILE_MAP_ALL_ACCESS, 0, 0, ulFileSize);
 		if (FileData == NULL)
 		{
-			ERROR_MESSAGE(string("AddNewSection:MapViewOfFile error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewSection:MapViewOfFile error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
@@ -97,7 +98,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		// 判断是否是PE文件
 		if (((PIMAGE_DOS_HEADER)FileData)->e_magic != IMAGE_DOS_SIGNATURE)
 		{
-			ERROR_MESSAGE("AddNewSection:Target File is not a vaild file");
+			std::cout<<("AddNewSection:Target File is not a vaild file");
 			bOk = false;
 			goto EXIT;
 		}
@@ -105,7 +106,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((ULONG_PTR)FileData + ((PIMAGE_DOS_HEADER)FileData)->e_lfanew);
 		if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE)
 		{
-			ERROR_MESSAGE("AddNewSection:Target File is not a vaild file");
+			std::cout<<("AddNewSection:Target File is not a vaild file");
 			bOk = false;
 			goto EXIT;
 		}
@@ -113,7 +114,7 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		// 判断是否可以增加一个新节
 		if ((pNtHeaders->FileHeader.NumberOfSections + 1) * sizeof(IMAGE_SECTION_HEADER) > pNtHeaders->OptionalHeader.SizeOfHeaders/*三个部分的总大小*/)
 		{
-			ERROR_MESSAGE("AddNewSection:There is not enough space to add a new section.");
+			std::cout<<("AddNewSection:There is not enough space to add a new section.");
 			bOk = false;
 			goto EXIT;
 		}
@@ -150,14 +151,14 @@ BOOL AddNewSection(const string& strTargetFile, ULONG ulNewSectionSize, const st
 		bOk = WriteFile(TargetFileHandle, pNewSectionContent, FileSize, &dwWrittenLength, nullptr);
 		if (bOk == false)
 		{
-			ERROR_MESSAGE(string("AddNewSection:WriteFile error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewSection:WriteFile error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
 	}
 	catch (exception* e)
 	{
-		ERROR_MESSAGE((string("AddNewSection:") + e->what()).c_str());
+		std::cout<<((string("AddNewSection:") + e->what()).c_str());
 		bOk = false;
 	}
 EXIT:
@@ -199,7 +200,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		TargetFileHandle = CreateFileA(strTargetFile.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (TargetFileHandle == INVALID_HANDLE_VALUE)
 		{
-			ERROR_MESSAGE(string("AddNewImportDescriptor:CreateFileA error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewImportDescriptor:CreateFileA error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
@@ -210,7 +211,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		MappingHandle = CreateFileMappingA(TargetFileHandle, NULL, PAGE_READWRITE, 0, ulFileSize, NULL);
 		if (MappingHandle == NULL)
 		{
-			cout << "AddNewImportDescriptor:CreateFileMapping error with error code:" << std::to_string(GetLastError()).c_str();
+			cout << "AddNewImportDescriptor:CreateFileMapping error with error code:" << std::to_string(static_cast<long long>(GetLastError())).c_str();
 			bOk = false;
 			goto EXIT;
 		}
@@ -219,7 +220,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		FileData = MapViewOfFile(MappingHandle, FILE_MAP_ALL_ACCESS, 0, 0, ulFileSize);
 		if (FileData == NULL)
 		{
-			ERROR_MESSAGE(string("AddNewImportDescriptor:MapViewOfFile error with error code:" + GetLastError()).c_str());
+			std::cout<<(string("AddNewImportDescriptor:MapViewOfFile error with error code:" + GetLastError()).c_str());
 			bOk = false;
 			goto EXIT;
 		}
@@ -227,7 +228,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		// 判断是否是PE文件
 		if (((PIMAGE_DOS_HEADER)FileData)->e_magic != IMAGE_DOS_SIGNATURE)
 		{
-			ERROR_MESSAGE("AddNewImportDescriptor:Target File is not a vaild file");
+			std::cout<<("AddNewImportDescriptor:Target File is not a vaild file");
 			bOk = false;
 			goto EXIT;
 		}
@@ -235,7 +236,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)((ULONG_PTR)FileData + ((PIMAGE_DOS_HEADER)FileData)->e_lfanew);
 		if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE)
 		{
-			ERROR_MESSAGE("AddNewImportDescriptor:Target File is not a vaild file");
+			std::cout<<("AddNewImportDescriptor:Target File is not a vaild file");
 			bOk = false;
 			goto EXIT;
 		}
@@ -280,7 +281,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 		// 确定 IMAGE_IMPORT_BY_NAM 的位置 
 		PIMAGE_IMPORT_BY_NAME pImportByName = (PIMAGE_IMPORT_BY_NAME)(pszDllName + strInjectDllName.length() + 1);
 		// 初始化 IMAGE_THUNK_DATA
-		pNewThunkData->u1.Ordinal = (DWORD_PTR)pImportByName - (DWORD_PTR)FileData + /*加上修正值 - 这里应该填充在内存中的地址*/dwDelt;
+		pNewThunkData->u1.Ordinal = (DWORD_PTR)pImportByName - (DWORD_PTR)FileData + dwDelt;
 		// 初始化 IMAGE_IMPORT_BY_NAME
 		pImportByName->Hint = 1;
 		memcpy(pImportByName->Name, strFunctionName.c_str(), strFunctionName.length());
@@ -302,7 +303,7 @@ BOOL AddNewImportDescriptor(const string& strTargetFile, const string& strInject
 	}
 	catch (exception* e)
 	{
-		ERROR_MESSAGE((string("AddNewImportDescriptor:") + e->what()).c_str());
+		std::cout<<((string("AddNewImportDescriptor:") + e->what()).c_str());
 		bOk = false;
 	}
 
